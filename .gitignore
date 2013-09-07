@@ -2,3 +2,5 @@
 *~
 *#
 venv
+hypem_hipscore/hypem_web/migrations
+hypem_hipscore/db.sqlite
