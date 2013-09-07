@@ -3,8 +3,6 @@
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
-MANAGERS = ADMINS
-
 import os
 import dj_database_url
 
@@ -111,6 +109,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'hypem_web',
     'south'
 )
 
