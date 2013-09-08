@@ -110,6 +110,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'hypem_web',
+    'gunicorn',
     'south'
 )
 
@@ -141,3 +142,9 @@ LOGGING = {
         },
     }
 }
+
+try:
+    from local_settings import *
+except Exception:
+    print "No Local Settings"
+
