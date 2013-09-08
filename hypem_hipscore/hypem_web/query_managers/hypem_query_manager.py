@@ -9,6 +9,7 @@ class HypemQueryManager(object):
     POPULAR_ENDPOINT = "http://hypem.com/playlist/popular/3day/json/%(offset)s/data.js"
     USER_ENDPOINT = "http://api.hypem.com/api/get_profile?username=%(username)s"
     TIMEMACHINE_ENDPOINT = "http://localhost:3000/popular/%(date)s/"
+    TRACKSOURCE_ENDPOINT = "http://localhost:3000/source/%(track_media_id)s/"
 
     def _query(self,endpoint):
         result = {}
@@ -19,6 +20,11 @@ class HypemQueryManager(object):
             pass
             
         return result
+
+    def get_track_source(self,track_media_id):
+        endpoint = self.TRACKSOURCE_ENDPOINT % {'track_media_id':track_media_id}
+        res = requests.get(endpoint)
+        return res.json()
 
     def get_favorites(self,username,offset=1):
         endpoint = self.FAVORITES_ENDPOINT % {'username':username,

@@ -6,6 +6,10 @@ import json
 
 from hypem_web.query_managers import hypem_manager
 
+def get_track_source(request,track_media_id):
+    track_data = hypem_manager.get_track_source(track_media_id)
+    return HttpResponse(json.dumps(track_data),content_type="application/json")
+
 def index(request):
     return render_to_response("index.html",{},RequestContext(request))
 
