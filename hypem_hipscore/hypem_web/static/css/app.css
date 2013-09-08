@@ -1,0 +1,9 @@
+.song-view {
+  overflow: hidden;
+  margin-top: 0.25em;
+}
+
+.song-view img {
+  float: left;
+  margin-right: 0.5em;
+}

@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
-
 {% block body %}
-hello world
+  <script src="{{ STATIC_URL }}js/app.js"></script>
+
+  <script type="text/javascript">
+    require('boot');
+  </script>
 {% endblock %}

@@ -10,4 +10,5 @@ urlpatterns = patterns('hypem_web.views',
                        url(r'^popular/$', 'popular',name="popular"),
                        url(r'^user/(?P<username>.*)/$', 'user',name="user"),
                        url(r'^.*$', 'index',name="index"),
+
                    )
