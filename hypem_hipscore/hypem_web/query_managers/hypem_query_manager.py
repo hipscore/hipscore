@@ -24,17 +24,21 @@ class HypemQueryManager(object):
         endpoint = self.FAVORITES_ENDPOINT % {'username':username,
                                               'offset':offset}
         res = requests.get(endpoint)
-        return self._parse_track_data(res.json())
+        json_data = res.json()
+        del json_data['version']
+        return json_data.values()
 
     def get_popular(self,offset=1):
         endpoint = self.POPULAR_ENDPOINT % {'offset':offset}
         res = requests.get(endpoint)
-        return self._parse_track_data(res.json())
+        json_data = res.json()
+        del json_data['version']
+        return json_data.values()
 
     def get_user(self,username):
         endpoint = self.USER_ENDPOINT % {'username':username}
         res = requests.get(endpoint)
-        return self._parse_user_data(res.json())
+        return res.json()
 
     def _parse_user_data(self,raw_user_data):
         try:
@@ -77,6 +81,8 @@ class HypemQueryManager(object):
                 known_tracks_map[track.mediaid] = track
 
             tracks_result.append(track)
+
+        
                 
         return tracks_result
 
