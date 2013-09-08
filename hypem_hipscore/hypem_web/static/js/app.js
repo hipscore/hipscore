@@ -5305,7 +5305,7 @@ exports.fetch = fetch;
 
 
 function fetch(username, callback) {
-  var url = '/favorites/' + username + '/';
+  var url = '/favorites/' + username;
 
   request
     .get(url)
@@ -5379,18 +5379,58 @@ SongList.prototype.fetch = function (username) {
   });
 };
 });
+require.register("user/user.js", function(exports, require, module){
+var model = require('model');
+
+
+var User = module.exports = model('User')
+  .route('/user')
+  .attr('username')
+  .attr('avatar');
+
+
+User.primaryKey = 'username';
+});
+require.register("profile-view/profile-view.js", function(exports, require, module){
+var domify = require('domify')
+  , each = require('each')
+  , template = require('./template.html')
+  , User = require('user');
+
+
+module.exports = ProfileView;
+
+
+function ProfileView () {
+  this.el = domify(template);
+  this.user = new User();
+}
+
+
+ProfileView.prototype.fetch = function (username) {
+  var self = this;
+
+  User.get(username, function (err, attrs) {
+    if (err) throw err;
+    self.user.set(attrs);
+  });
+};
+
+});
 require.register("boot/boot.js", function(exports, require, module){
 var body = document.body
   , domify = require('domify')
   , each = require('each')
   , map = require('map')
+  , ProfileView = require('profile-view')
   , query = require('query')
   , Router = require('router')
   , SongList = require('song-list')
   , template = require('./template.html');
 
 
-var songList = new SongList();
+var songList = new SongList()
+  , profileView = new ProfileView();
 
 
 var router = new Router()
@@ -5407,12 +5447,14 @@ router.go(window.location.pathname);
 function load (context, next) {
   var username = context.params.username;
   songList.fetch(username);
+  profileView.fetch(username);
 }
 
 
 function render () {
   var el = domify(template);
   query('#song-list', el).appendChild(songList.el);
+  query('#profile-view', el).appendChild(profileView.el);
   body.appendChild(el);
 }
 });
@@ -5432,7 +5474,7 @@ function render () {
 
 
 require.register("song-view/template.html", function(exports, require, module){
-module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n</div>';
+module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n  <p>{ score }</p>\n</div>';
 });
 
 
@@ -5440,8 +5482,12 @@ module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <p><
 require.register("song-list/template.html", function(exports, require, module){
 module.exports = '<div class="song-list">\n</div>';
 });
+
+require.register("profile-view/template.html", function(exports, require, module){
+module.exports = '<div class="profile-view">\n  <img src="{ avatar }" />\n  <h1>{ name }</h1>\n</div>';
+});
 require.register("boot/template.html", function(exports, require, module){
-module.exports = '<div class="container">\n  <div class="row-fluid">\n    <div id="user-profile" class="span3"></div>\n    <div id="song-list" class="span8"></div>\n  </div>\n</div>';
+module.exports = '<div class="container">\n  <div class="row-fluid">\n    <div id="profile-view" class="span3"></div>\n    <div id="song-list" class="span8"></div>\n  </div>\n</div>';
 });
 require.alias("boot/boot.js", "hipscore-app/deps/boot/boot.js");
 require.alias("boot/boot.js", "hipscore-app/deps/boot/index.js");
@@ -5568,4 +5614,38 @@ require.alias("component-model/lib/index.js", "component-model/index.js");
 require.alias("song/song.js", "song/index.js");
 require.alias("songs/songs.js", "songs/index.js");
 require.alias("song-list/song-list.js", "song-list/index.js");
+require.alias("profile-view/profile-view.js", "boot/deps/profile-view/profile-view.js");
+require.alias("profile-view/profile-view.js", "boot/deps/profile-view/index.js");
+require.alias("component-domify/index.js", "profile-view/deps/domify/index.js");
+
+require.alias("component-each/index.js", "profile-view/deps/each/index.js");
+require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+require.alias("user/user.js", "profile-view/deps/user/user.js");
+require.alias("user/user.js", "profile-view/deps/user/index.js");
+require.alias("component-model/lib/index.js", "user/deps/model/lib/index.js");
+require.alias("component-model/lib/static.js", "user/deps/model/lib/static.js");
+require.alias("component-model/lib/proto.js", "user/deps/model/lib/proto.js");
+require.alias("component-model/lib/index.js", "user/deps/model/index.js");
+require.alias("component-each/index.js", "component-model/deps/each/index.js");
+require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+require.alias("component-emitter/index.js", "component-model/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("component-collection/index.js", "component-model/deps/collection/index.js");
+require.alias("component-enumerable/index.js", "component-collection/deps/enumerable/index.js");
+require.alias("component-to-function/index.js", "component-enumerable/deps/to-function/index.js");
+
+require.alias("visionmedia-superagent/lib/client.js", "component-model/deps/superagent/lib/client.js");
+require.alias("visionmedia-superagent/lib/client.js", "component-model/deps/superagent/index.js");
+require.alias("component-emitter/index.js", "visionmedia-superagent/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("RedVentures-reduce/index.js", "visionmedia-superagent/deps/reduce/index.js");
+
+require.alias("visionmedia-superagent/lib/client.js", "visionmedia-superagent/index.js");
+require.alias("component-model/lib/index.js", "component-model/index.js");
+require.alias("user/user.js", "user/index.js");
+require.alias("profile-view/profile-view.js", "profile-view/index.js");
 require.alias("boot/boot.js", "boot/index.js");
