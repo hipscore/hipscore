@@ -5269,10 +5269,12 @@ function error(res) {
 
 });
 require.register("song/song.js", function(exports, require, module){
-var model = require('model');
+var map = require('map')
+  , model = require('model')
+  , request = require('superagent');
 
 
-module.exports = model('Song')
+var Song = module.exports = model('Song')
   .use(score)
   .attr('title')
   .attr('artist')
@@ -5285,13 +5287,13 @@ module.exports = model('Song')
 function score (Model) {
   Model.on('construct', function (model) {
     model.score = function () {
-      return this.likes() / (this.postedAt() - this.likedAt());
+      var time = (this.likedAt() - this.postedAt()) / 1000;
+      time = time < 0 ? Math.abs(time) : time * 2;
+      return Math.round(this.likes() / time * 10000);
     };
   });
   return Model;
 }
-
-
 
 });
 require.register("songs/songs.js", function(exports, require, module){
@@ -5314,13 +5316,13 @@ function fetch(username, callback) {
 
     if (err) return callback(err);
 
-    var songs = map(res.body, function (item) {
-      var song = item.fields;
-
+    var songs = map(res.body, function (song) {
       return new Song({
         title: song.title,
         artist: song.artist,
-        postedAt: new Date(song.dateposted),
+        postedAt: fromTimestamp(song.dateposted),
+        likedAt: fromTimestamp(song.dateloved),
+        likes: song.loved_count,
         thumbnail: song.thumb_url
       });
     });
@@ -5328,12 +5330,18 @@ function fetch(username, callback) {
     callback(null, songs);
   });
 }
+
+
+
+function fromTimestamp (timestamp) {
+  return new Date(timestamp * 1000);
+}
 });
 require.register("song-list/song-list.js", function(exports, require, module){
 var domify = require('domify')
   , each = require('each')
   , map = require('map')
-  , songs = require('songs')
+  , Songs = require('songs')
   , SongView = require('song-view')
   , template = require('./template.html');
 
@@ -5372,12 +5380,71 @@ SongList.prototype.reset = function () {
 
 SongList.prototype.fetch = function (username) {
   var self = this;
-  songs.fetch(username, function (err, songs) {
+  Songs.fetch(username, function (err, songs) {
     if (err) throw err;
     self.update(songs);
     self.render();
   });
 };
+});
+require.register("component-relative-date/index.js", function(exports, require, module){
+
+/**
+ * Expose `relative`.
+ */
+
+module.exports = relative;
+
+/**
+ * Constants.
+ */
+
+var second = 1000;
+var minute = 60 * second;
+var hour = 60 * minute;
+var day = 24 * hour;
+var week = 7 * day;
+var year = day * 365;
+var month = year / 12;
+
+/**
+ * Return `date` in words relative to `other`
+ * which defaults to now.
+ *
+ * @param {Date} date
+ * @param {Date} other
+ * @return {String}
+ * @api public
+ */
+
+function relative(date, other) {
+  other = other || new Date;
+  var ms = Math.abs(other - date);
+
+  if (ms < second) return '';
+
+  if (ms == second) return 'one second';
+  if (ms < minute) return Math.ceil(ms / second) + ' seconds';
+
+  if (ms == minute) return 'one minute';
+  if (ms < hour) return Math.ceil(ms / minute) + ' minutes';
+
+  if (ms == hour) return 'one hour';
+  if (ms < day) return Math.ceil(ms / hour) + ' hours';
+
+  if (ms == day) return 'one day';
+  if (ms < week) return Math.ceil(ms / day) + ' days';
+
+  if (ms == week) return 'one week';
+  if (ms < month) return Math.ceil(ms / week) + ' weeks';
+
+  if (ms == month) return 'one month';
+  if (ms < year) return Math.ceil(ms / month) + ' months';
+
+  if (ms == year) return 'one year';
+  return Math.round(ms / year) + ' years';
+}
+
 });
 require.register("user/user.js", function(exports, require, module){
 var model = require('model');
@@ -5385,6 +5452,9 @@ var model = require('model');
 
 var User = module.exports = model('User')
   .route('/user')
+  .attr('created')
+  .attr('likes')
+  .attr('followers')
   .attr('username')
   .attr('avatar');
 
@@ -5394,6 +5464,8 @@ User.primaryKey = 'username';
 require.register("profile-view/profile-view.js", function(exports, require, module){
 var domify = require('domify')
   , each = require('each')
+  , reactive = require('reactive')
+  , relative = require('relative-date')
   , template = require('./template.html')
   , User = require('user');
 
@@ -5404,15 +5476,24 @@ module.exports = ProfileView;
 function ProfileView () {
   this.el = domify(template);
   this.user = new User();
+  reactive(this.el, this.user, this);
 }
 
 
 ProfileView.prototype.fetch = function (username) {
   var self = this;
 
-  User.get(username, function (err, attrs) {
+  User.get(username, function (err, user) {
     if (err) throw err;
-    self.user.set(attrs);
+    user = user.attrs;
+
+    self.user.set({
+      created: new Date(user.joined_ts * 1000),
+      likes: user.favorites_count.item,
+      followers: user.favorites_count.followers,
+      username: user.username,
+      avatar: user.userpic
+    });
   });
 };
 
@@ -5474,7 +5555,7 @@ function render () {
 
 
 require.register("song-view/template.html", function(exports, require, module){
-module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n  <p>{ score }</p>\n</div>';
+module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <h4 class="score">{ score }</h4>\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n</div>';
 });
 
 
@@ -5483,8 +5564,9 @@ require.register("song-list/template.html", function(exports, require, module){
 module.exports = '<div class="song-list">\n</div>';
 });
 
+
 require.register("profile-view/template.html", function(exports, require, module){
-module.exports = '<div class="profile-view">\n  <img src="{ avatar }" />\n  <h1>{ name }</h1>\n</div>';
+module.exports = '<div class="profile-view">\n  <img src="{ avatar }" />\n  <h1>{ username }</h1>\n  <span>{ likes } Likes</span>\n  <span>{ followers } Followers</span>\n</div>';
 });
 require.register("boot/template.html", function(exports, require, module){
 module.exports = '<div class="container">\n  <div class="row-fluid">\n    <div id="profile-view" class="span3"></div>\n    <div id="song-list" class="span8"></div>\n  </div>\n</div>';
@@ -5588,6 +5670,9 @@ require.alias("RedVentures-reduce/index.js", "visionmedia-superagent/deps/reduce
 require.alias("visionmedia-superagent/lib/client.js", "visionmedia-superagent/index.js");
 require.alias("song/song.js", "songs/deps/song/song.js");
 require.alias("song/song.js", "songs/deps/song/index.js");
+require.alias("component-map/index.js", "song/deps/map/index.js");
+require.alias("component-to-function/index.js", "component-map/deps/to-function/index.js");
+
 require.alias("component-model/lib/index.js", "song/deps/model/lib/index.js");
 require.alias("component-model/lib/static.js", "song/deps/model/lib/static.js");
 require.alias("component-model/lib/proto.js", "song/deps/model/lib/proto.js");
@@ -5611,6 +5696,14 @@ require.alias("RedVentures-reduce/index.js", "visionmedia-superagent/deps/reduce
 
 require.alias("visionmedia-superagent/lib/client.js", "visionmedia-superagent/index.js");
 require.alias("component-model/lib/index.js", "component-model/index.js");
+require.alias("visionmedia-superagent/lib/client.js", "song/deps/superagent/lib/client.js");
+require.alias("visionmedia-superagent/lib/client.js", "song/deps/superagent/index.js");
+require.alias("component-emitter/index.js", "visionmedia-superagent/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("RedVentures-reduce/index.js", "visionmedia-superagent/deps/reduce/index.js");
+
+require.alias("visionmedia-superagent/lib/client.js", "visionmedia-superagent/index.js");
 require.alias("song/song.js", "song/index.js");
 require.alias("songs/songs.js", "songs/index.js");
 require.alias("song-list/song-list.js", "song-list/index.js");
@@ -5620,6 +5713,32 @@ require.alias("component-domify/index.js", "profile-view/deps/domify/index.js");
 
 require.alias("component-each/index.js", "profile-view/deps/each/index.js");
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
+
+require.alias("component-reactive/lib/index.js", "profile-view/deps/reactive/lib/index.js");
+require.alias("component-reactive/lib/utils.js", "profile-view/deps/reactive/lib/utils.js");
+require.alias("component-reactive/lib/text-binding.js", "profile-view/deps/reactive/lib/text-binding.js");
+require.alias("component-reactive/lib/attr-binding.js", "profile-view/deps/reactive/lib/attr-binding.js");
+require.alias("component-reactive/lib/binding.js", "profile-view/deps/reactive/lib/binding.js");
+require.alias("component-reactive/lib/bindings.js", "profile-view/deps/reactive/lib/bindings.js");
+require.alias("component-reactive/lib/adapter.js", "profile-view/deps/reactive/lib/adapter.js");
+require.alias("component-reactive/lib/index.js", "profile-view/deps/reactive/index.js");
+require.alias("component-format-parser/index.js", "component-reactive/deps/format-parser/index.js");
+
+require.alias("component-props/index.js", "component-reactive/deps/props/index.js");
+require.alias("component-props/index.js", "component-reactive/deps/props/index.js");
+require.alias("component-props/index.js", "component-props/index.js");
+require.alias("visionmedia-debug/index.js", "component-reactive/deps/debug/index.js");
+require.alias("visionmedia-debug/debug.js", "component-reactive/deps/debug/debug.js");
+
+require.alias("component-event/index.js", "component-reactive/deps/event/index.js");
+
+require.alias("component-classes/index.js", "component-reactive/deps/classes/index.js");
+require.alias("component-indexof/index.js", "component-classes/deps/indexof/index.js");
+
+require.alias("component-query/index.js", "component-reactive/deps/query/index.js");
+
+require.alias("component-reactive/lib/index.js", "component-reactive/index.js");
+require.alias("component-relative-date/index.js", "profile-view/deps/relative-date/index.js");
 
 require.alias("user/user.js", "profile-view/deps/user/user.js");
 require.alias("user/user.js", "profile-view/deps/user/index.js");

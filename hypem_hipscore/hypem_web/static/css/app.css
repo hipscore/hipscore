@@ -1,9 +1,17 @@
 .song-view {
   overflow: hidden;
-  margin-top: 0.25em;
+  background: #95A5A6;
+  border-top-color: #7F8C8D;
+  border-top-style: solid;
+  border-top-width: 0.3em;
 }
 
 .song-view img {
   float: left;
+  margin-right: 0.5em;
+}
+
+.song-view .score {
+  float: right;
   margin-right: 0.5em;
 }
