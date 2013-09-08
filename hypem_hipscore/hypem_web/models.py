@@ -8,22 +8,10 @@ class HypemTrack(models.Model):
     mediaid = models.CharField(max_length=63)
     artist = models.CharField(max_length=127)
     title = models.CharField(max_length=127)
-    dateposted = models.DateTimeField()
-    description = models.TextField()
-    thumb_url = models.URLField()
+    dateposted = models.DateTimeField(null=True,blank=True)
 
-
-class HypemUser(models.Model):
-    username = models.CharField(max_length=127,unique=True)
-    joined = models.DateTimeField()
-
-    fullname = models.CharField(max_length=127,null=True,blank=True)
-    twitter_username = models.CharField(max_length=127,null=True,blank=True)
-    userpic = models.URLField(null=True,blank=True)
-    location = models.CharField(max_length=127,null=True,blank=True)
-    
 class HypemPopularSnapshot(models.Model):
-    created = models.DateTimeField(auto_now_add=True)
+    date = models.DateField()
     tracks = models.ManyToManyField(HypemTrack,through='HypemRankListing')
 
 class HypemRankListing(models.Model):
