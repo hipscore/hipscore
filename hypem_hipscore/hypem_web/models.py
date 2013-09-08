@@ -22,4 +22,13 @@ class HypemUser(models.Model):
     userpic = models.URLField(null=True,blank=True)
     location = models.CharField(max_length=127,null=True,blank=True)
     
+class HypemPopularSnapshot(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    tracks = models.ManyToManyField(HypemTrack,through='HypemRankListing')
+
+class HypemRankListing(models.Model):
+    hypemtrack = models.ForeignKey(HypemTrack)
+    hypempopularsnapshot = models.ForeignKey(HypemPopularSnapshot)
+    rank = models.IntegerField()
+
     
