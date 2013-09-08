@@ -5830,7 +5830,7 @@ function render () {
 
 
 require.register("song-view/template.html", function(exports, require, module){
-module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <h4 class="score">{ score }</h4>\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n  <audio src=""></audio>\n</div>';
+module.exports = '<div class="song-view">\n  <audio src=""></audio>\n  <img src="{ thumbnail }" />\n  <h4 class="score">{ score }</h4>\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n</div>';
 });
 
 
