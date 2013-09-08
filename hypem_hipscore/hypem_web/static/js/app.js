@@ -269,119 +269,6 @@ function parse(html) {
 }
 
 });
-require.register("component-type/index.js", function(exports, require, module){
-
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Function]': return 'function';
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object String]': return 'string';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val && val.nodeType === 1) return 'element';
-  if (val === Object(val)) return 'object';
-
-  return typeof val;
-};
-
-});
-require.register("component-each/index.js", function(exports, require, module){
-
-/**
- * Module dependencies.
- */
-
-var type = require('type');
-
-/**
- * HOP reference.
- */
-
-var has = Object.prototype.hasOwnProperty;
-
-/**
- * Iterate the given `obj` and invoke `fn(val, i)`.
- *
- * @param {String|Array|Object} obj
- * @param {Function} fn
- * @api public
- */
-
-module.exports = function(obj, fn){
-  switch (type(obj)) {
-    case 'array':
-      return array(obj, fn);
-    case 'object':
-      if ('number' == typeof obj.length) return array(obj, fn);
-      return object(obj, fn);
-    case 'string':
-      return string(obj, fn);
-  }
-};
-
-/**
- * Iterate string chars.
- *
- * @param {String} obj
- * @param {Function} fn
- * @api private
- */
-
-function string(obj, fn) {
-  for (var i = 0; i < obj.length; ++i) {
-    fn(obj.charAt(i), i);
-  }
-}
-
-/**
- * Iterate object keys.
- *
- * @param {Object} obj
- * @param {Function} fn
- * @api private
- */
-
-function object(obj, fn) {
-  for (var key in obj) {
-    if (has.call(obj, key)) {
-      fn(key, obj[key]);
-    }
-  }
-}
-
-/**
- * Iterate array-ish.
- *
- * @param {Array|Object} obj
- * @param {Function} fn
- * @api private
- */
-
-function array(obj, fn) {
-  for (var i = 0; i < obj.length; ++i) {
-    fn(obj[i], i);
-  }
-}
-});
 require.register("component-to-function/index.js", function(exports, require, module){
 
 /**
@@ -479,6 +366,128 @@ function objectToFunction(obj) {
       if (!match[key](val[key])) return false;
     }
     return true;
+  }
+}
+
+});
+require.register("component-type/index.js", function(exports, require, module){
+
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Function]': return 'function';
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object String]': return 'string';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val && val.nodeType === 1) return 'element';
+  if (val === Object(val)) return 'object';
+
+  return typeof val;
+};
+
+});
+require.register("component-each/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var toFunction = require('to-function');
+var type;
+
+try {
+  type = require('type-component');
+} catch (e) {
+  type = require('type');
+}
+
+/**
+ * HOP reference.
+ */
+
+var has = Object.prototype.hasOwnProperty;
+
+/**
+ * Iterate the given `obj` and invoke `fn(val, i)`.
+ *
+ * @param {String|Array|Object} obj
+ * @param {Function} fn
+ * @api public
+ */
+
+module.exports = function(obj, fn){
+  fn = toFunction(fn);
+  switch (type(obj)) {
+    case 'array':
+      return array(obj, fn);
+    case 'object':
+      if ('number' == typeof obj.length) return array(obj, fn);
+      return object(obj, fn);
+    case 'string':
+      return string(obj, fn);
+  }
+};
+
+/**
+ * Iterate string chars.
+ *
+ * @param {String} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function string(obj, fn) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn(obj.charAt(i), i);
+  }
+}
+
+/**
+ * Iterate object keys.
+ *
+ * @param {Object} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function object(obj, fn) {
+  for (var key in obj) {
+    if (has.call(obj, key)) {
+      fn(key, obj[key]);
+    }
+  }
+}
+
+/**
+ * Iterate array-ish.
+ *
+ * @param {Array|Object} obj
+ * @param {Function} fn
+ * @api private
+ */
+
+function array(obj, fn) {
+  for (var i = 0; i < obj.length; ++i) {
+    fn(obj[i], i);
   }
 }
 
@@ -596,7 +605,7 @@ require.register("component-event/index.js", function(exports, require, module){
 
 exports.bind = function(el, type, fn, capture){
   if (el.addEventListener) {
-    el.addEventListener(type, fn, capture);
+    el.addEventListener(type, fn, capture || false);
   } else {
     el.attachEvent('on' + type, fn);
   }
@@ -616,7 +625,7 @@ exports.bind = function(el, type, fn, capture){
 
 exports.unbind = function(el, type, fn, capture){
   if (el.removeEventListener) {
-    el.removeEventListener(type, fn, capture);
+    el.removeEventListener(type, fn, capture || false);
   } else {
     el.detachEvent('on' + type, fn);
   }
@@ -1241,6 +1250,397 @@ Route.prototype.match = function (path, params) {
   return true;
 };
 });
+require.register("component-indexof/index.js", function(exports, require, module){
+module.exports = function(arr, obj){
+  if (arr.indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+});
+require.register("component-emitter/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var index = require('indexof');
+
+/**
+ * Expose `Emitter`.
+ */
+
+module.exports = Emitter;
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks[event] = this._callbacks[event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  var self = this;
+  this._callbacks = this._callbacks || {};
+
+  function on() {
+    self.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  fn._off = on;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks[event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks[event];
+    return this;
+  }
+
+  // remove specific handler
+  var i = index(callbacks, fn._off || fn);
+  if (~i) callbacks.splice(i, 1);
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks[event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks[event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+});
+require.register("component-autoscale-canvas/index.js", function(exports, require, module){
+
+/**
+ * Retina-enable the given `canvas`.
+ *
+ * @param {Canvas} canvas
+ * @return {Canvas}
+ * @api public
+ */
+
+module.exports = function(canvas){
+  var ctx = canvas.getContext('2d');
+  var ratio = window.devicePixelRatio || 1;
+  if (1 != ratio) {
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
+    canvas.width *= ratio;
+    canvas.height *= ratio;
+    ctx.scale(ratio, ratio);
+  }
+  return canvas;
+};
+});
+require.register("calvinfo-audio/index.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var domify = require('domify')
+  , event = require('event')
+  , Emitter = require('emitter')
+  , html = require('./template')
+  , Progress = require('./progress');
+
+/**
+ * Expose `Audio`.
+ */
+
+module.exports = Audio;
+
+/**
+ * Initialize a new `Audio` instance with the given `el`.
+ *
+ * @param {Element} el
+ * @api public
+ */
+
+function Audio(el) {
+  if (!(this instanceof Audio)) return new Audio(el);
+  this.audio = el;
+  this.el = domify(html);
+  this.progress = new Progress;
+  this.el.appendChild(this.progress.el);
+  el.parentNode.insertBefore(this.el, this.audio);
+  event.bind(this.el, 'click', this.toggle.bind(this));
+  event.bind(el, 'timeupdate', this.ontimeupdate.bind(this));
+}
+
+/**
+ * Inherit from `Emitter.prototype`.
+ */
+
+Audio.prototype = new Emitter;
+
+/**
+ * Update playback process indicator.
+ *
+ * @api private
+ */
+
+Audio.prototype.ontimeupdate = function(){
+  var el = this.audio;
+  var n = el.currentTime / el.duration * 100;
+  this.progress.update(n);
+};
+
+/**
+ * Toggle play state.
+ *
+ * @api public
+ */
+
+Audio.prototype.toggle = function(e){
+  e.preventDefault();
+  if (this.audio.paused) {
+    this.play();
+  } else {
+    this.pause();
+  }
+};
+
+/**
+ * Start playing the audio.
+ *
+ * @api public
+ */
+
+Audio.prototype.play = function(){
+  this.audio.play();
+  this.el.className = 'audio playing';
+  this.emit('playing');
+};
+
+/**
+ * Start playing the audio.
+ *
+ * @api public
+ */
+
+Audio.prototype.pause = function(){
+  this.audio.pause();
+  this.el.className = 'audio paused';
+  this.emit('paused');
+};
+
+
+});
+require.register("calvinfo-audio/progress.js", function(exports, require, module){
+
+/**
+ * Module dependencies.
+ */
+
+var autoscale = require('autoscale-canvas');
+
+/**
+ * Expose `Progress`.
+ */
+
+module.exports = Progress;
+
+/**
+ * Initialize a new `Progress` indicator.
+ */
+
+function Progress() {
+  this.percent = 0;
+  this.el = document.createElement('canvas');
+  this.ctx = this.el.getContext('2d');
+  this.color = '#00bbff';
+  this.shadowColor = 'rgba(0, 187, 255, 0.3)';
+  this.fontSize = 12;
+  this.font = 'helvetica, arial, sans-serif';
+  this.size(52);
+}
+
+/**
+ * Set progress size to `n`.
+ *
+ * @param {Number} n
+ * @return {Progress}
+ * @api public
+ */
+
+Progress.prototype.size = function(n){
+  this.el.width = n;
+  this.el.height = n;
+  autoscale(this.el);
+  return this;
+};
+
+/**
+ * Update percentage to `n`.
+ *
+ * @param {Number} n
+ * @return {Progress}
+ * @api public
+ */
+
+Progress.prototype.update = function(n){
+  this.percent = n;
+  this.draw(this.ctx);
+  return this;
+};
+
+/**
+ * Draw on `ctx`.
+ *
+ * @param {CanvasRenderingContext2d} ctx
+ * @return {Progress}
+ * @api private
+ */
+
+Progress.prototype.draw = function(ctx){
+  var percent = Math.min(this.percent, 100)
+    , ratio = window.devicePixelRatio || 1
+    , size = this.el.width / ratio
+    , half = size / 2
+    , x = half
+    , y = half
+    , rad = half - 1
+    , fontSize = this.fontSize;
+
+  ctx.font = fontSize + 'px ' + this.font;
+
+  var angle = Math.PI * 2 * (percent / 100);
+  ctx.clearRect(0, 0, size, size);
+
+  // shadow
+  ctx.shadowColor = this.shadowColor;
+  ctx.shadowBlur = 10;
+
+  // outer circle
+  ctx.strokeStyle = this.color;
+  ctx.beginPath();
+  ctx.arc(x, y, rad, 0, angle, false);
+  ctx.stroke();
+
+  return this;
+};
+
+
+});
+require.register("calvinfo-audio/template.js", function(exports, require, module){
+module.exports = '<div class="audio">\n  <a href="#" class="audio-play"></a>\n</div>';
+});
 require.register("component-format-parser/index.js", function(exports, require, module){
 
 /**
@@ -1502,15 +1902,6 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-});
-require.register("component-indexof/index.js", function(exports, require, module){
-module.exports = function(arr, obj){
-  if (arr.indexOf) return arr.indexOf(obj);
-  for (var i = 0; i < arr.length; ++i) {
-    if (arr[i] === obj) return i;
-  }
-  return -1;
-};
 });
 require.register("component-classes/index.js", function(exports, require, module){
 
@@ -2696,7 +3087,9 @@ exports.get = function(obj, prop) {
 
 });
 require.register("song-view/song-view.js", function(exports, require, module){
-var domify = require('domify')
+var audio = require('audio')
+  , domify = require('domify')
+  , query = require('query')
   , reactive = require('reactive')
   , template = require('./template.html');
 
@@ -2708,173 +3101,23 @@ function SongView (song) {
   this.model = song;
   this.el = domify(template);
   this.view = reactive(this.el, song, this);
-}
-
-
-
-});
-require.register("component-emitter/index.js", function(exports, require, module){
-
-/**
- * Module dependencies.
- */
-
-var index = require('indexof');
-
-/**
- * Expose `Emitter`.
- */
-
-module.exports = Emitter;
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-/**
- * Mixin the emitter properties.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-/**
- * Listen on the given `event` with `fn`.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.on = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks[event] = this._callbacks[event] || [])
-    .push(fn);
-  return this;
-};
-
-/**
- * Adds an `event` listener that will be invoked a single
- * time then automatically removed.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.once = function(event, fn){
+  this.audio = audio(query('audio', this.el));
   var self = this;
-  this._callbacks = this._callbacks || {};
+  this.audio.once('playing', function () { self.load(); }); // hack
+}
 
-  function on() {
-    self.off(event, on);
-    fn.apply(this, arguments);
-  }
 
-  fn._off = on;
-  this.on(event, on);
-  return this;
+SongView.prototype.load = function () {
+  this.audio.pause();
+  var audio = query('audio', this.el);
+  audio.src = this.model.mediaUrl();
+  this.audio.play();
 };
 
-/**
- * Remove the given callback for `event` or all
- * registered callbacks.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
 
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners = function(event, fn){
-  this._callbacks = this._callbacks || {};
 
-  // all
-  if (0 == arguments.length) {
-    this._callbacks = {};
-    return this;
-  }
-
-  // specific event
-  var callbacks = this._callbacks[event];
-  if (!callbacks) return this;
-
-  // remove all handlers
-  if (1 == arguments.length) {
-    delete this._callbacks[event];
-    return this;
-  }
-
-  // remove specific handler
-  var i = index(callbacks, fn._off || fn);
-  if (~i) callbacks.splice(i, 1);
-  return this;
-};
-
-/**
- * Emit `event` with the given args.
- *
- * @param {String} event
- * @param {Mixed} ...
- * @return {Emitter}
- */
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks[event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Return array of callbacks for `event`.
- *
- * @param {String} event
- * @return {Array}
- * @api public
- */
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks[event] || [];
-};
-
-/**
- * Check if this emitter has `event` handlers.
- *
- * @param {String} event
- * @return {Boolean}
- * @api public
- */
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
+SongView.prototype.toggle = function () {
+  this.audio.toggle();
 };
 
 });
@@ -5275,24 +5518,49 @@ var map = require('map')
 
 
 var Song = module.exports = model('Song')
-  .use(score)
+  .use(scorePlugin)
+  .use(trackPlugin)
+  .attr('mediaId')
   .attr('title')
   .attr('artist')
   .attr('postedAt')
   .attr('likes')
   .attr('likedAt')
+  .attr('mediaUrl')
   .attr('thumbnail');
 
 
-function score (Model) {
-  Model.on('construct', function (model) {
-    model.score = function () {
-      var time = (this.likedAt() - this.postedAt()) / 1000;
-      time = time < 0 ? Math.abs(time) : time * 2;
-      return Math.round(this.likes() / time * 10000);
-    };
+function scorePlugin (Model) {
+  return Model.on('construct', function (model) {
+    model.score = score;
   });
-  return Model;
+}
+
+
+function trackPlugin (Model) {
+  return Model.on('construct', function (model) {
+    model.track = track;
+  });
+}
+
+
+function score () {
+  var time = (this.likedAt() - this.postedAt()) / 1000;
+  time = time < 0 ? Math.abs(time) : time * 2;
+  return Math.round(this.likes() / time * 10000);
+}
+
+
+function track () {
+  var self = this;
+  request
+    .get('/get-track-source/' + this.mediaId())
+    .set('Accept', 'application/json')
+    .end(function (err, res) {
+      if (err) throw err;
+
+      self.mediaUrl(res.body.url);
+    });
 }
 
 });
@@ -5317,14 +5585,18 @@ function fetch(username, callback) {
     if (err) return callback(err);
 
     var songs = map(res.body, function (song) {
-      return new Song({
+      song = new Song({
         title: song.title,
         artist: song.artist,
         postedAt: fromTimestamp(song.dateposted),
         likedAt: fromTimestamp(song.dateloved),
         likes: song.loved_count,
-        thumbnail: song.thumb_url
+        thumbnail: song.thumb_url,
+        mediaId: song.mediaid
       });
+
+      song.track();
+      return song;
     });
 
     callback(null, songs);
@@ -5554,10 +5826,12 @@ function render () {
 
 
 
-require.register("song-view/template.html", function(exports, require, module){
-module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <h4 class="score">{ score }</h4>\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n</div>';
-});
 
+
+
+require.register("song-view/template.html", function(exports, require, module){
+module.exports = '<div class="song-view">\n  <img src="{ thumbnail }" />\n  <h4 class="score">{ score }</h4>\n  <p><b>{ artist }</b></p>\n  <p>{ title }</p>\n  <audio src=""></audio>\n</div>';
+});
 
 
 require.register("song-list/template.html", function(exports, require, module){
@@ -5577,6 +5851,8 @@ require.alias("boot/boot.js", "boot/index.js");
 require.alias("component-domify/index.js", "boot/deps/domify/index.js");
 
 require.alias("component-each/index.js", "boot/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("component-map/index.js", "boot/deps/map/index.js");
@@ -5613,6 +5889,8 @@ require.alias("ianstormtaylor-router/lib/index.js", "ianstormtaylor-router/index
 require.alias("song-list/song-list.js", "boot/deps/song-list/song-list.js");
 require.alias("song-list/song-list.js", "boot/deps/song-list/index.js");
 require.alias("component-each/index.js", "song-list/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("component-map/index.js", "song-list/deps/map/index.js");
@@ -5622,10 +5900,24 @@ require.alias("component-domify/index.js", "song-list/deps/domify/index.js");
 
 require.alias("song-view/song-view.js", "song-list/deps/song-view/song-view.js");
 require.alias("song-view/song-view.js", "song-list/deps/song-view/index.js");
+require.alias("calvinfo-audio/index.js", "song-view/deps/audio/index.js");
+require.alias("calvinfo-audio/progress.js", "song-view/deps/audio/progress.js");
+require.alias("calvinfo-audio/template.js", "song-view/deps/audio/template.js");
+require.alias("component-domify/index.js", "calvinfo-audio/deps/domify/index.js");
+
+require.alias("component-event/index.js", "calvinfo-audio/deps/event/index.js");
+
+require.alias("component-emitter/index.js", "calvinfo-audio/deps/emitter/index.js");
+require.alias("component-indexof/index.js", "component-emitter/deps/indexof/index.js");
+
+require.alias("component-autoscale-canvas/index.js", "calvinfo-audio/deps/autoscale-canvas/index.js");
+
 require.alias("component-domify/index.js", "song-view/deps/domify/index.js");
 
 require.alias("component-map/index.js", "song-view/deps/map/index.js");
 require.alias("component-to-function/index.js", "component-map/deps/to-function/index.js");
+
+require.alias("component-query/index.js", "song-view/deps/query/index.js");
 
 require.alias("component-reactive/lib/index.js", "song-view/deps/reactive/lib/index.js");
 require.alias("component-reactive/lib/utils.js", "song-view/deps/reactive/lib/utils.js");
@@ -5658,6 +5950,8 @@ require.alias("component-map/index.js", "songs/deps/map/index.js");
 require.alias("component-to-function/index.js", "component-map/deps/to-function/index.js");
 
 require.alias("component-each/index.js", "songs/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("visionmedia-superagent/lib/client.js", "songs/deps/superagent/lib/client.js");
@@ -5678,6 +5972,8 @@ require.alias("component-model/lib/static.js", "song/deps/model/lib/static.js");
 require.alias("component-model/lib/proto.js", "song/deps/model/lib/proto.js");
 require.alias("component-model/lib/index.js", "song/deps/model/index.js");
 require.alias("component-each/index.js", "component-model/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("component-emitter/index.js", "component-model/deps/emitter/index.js");
@@ -5712,6 +6008,8 @@ require.alias("profile-view/profile-view.js", "boot/deps/profile-view/index.js")
 require.alias("component-domify/index.js", "profile-view/deps/domify/index.js");
 
 require.alias("component-each/index.js", "profile-view/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("component-reactive/lib/index.js", "profile-view/deps/reactive/lib/index.js");
@@ -5747,6 +6045,8 @@ require.alias("component-model/lib/static.js", "user/deps/model/lib/static.js");
 require.alias("component-model/lib/proto.js", "user/deps/model/lib/proto.js");
 require.alias("component-model/lib/index.js", "user/deps/model/index.js");
 require.alias("component-each/index.js", "component-model/deps/each/index.js");
+require.alias("component-to-function/index.js", "component-each/deps/to-function/index.js");
+
 require.alias("component-type/index.js", "component-each/deps/type/index.js");
 
 require.alias("component-emitter/index.js", "component-model/deps/emitter/index.js");
