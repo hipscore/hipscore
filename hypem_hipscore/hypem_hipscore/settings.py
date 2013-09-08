@@ -142,3 +142,9 @@ LOGGING = {
         },
     }
 }
+
+try:
+    from local_settings import *
+except Exception:
+    print "No Local Settings"
+
